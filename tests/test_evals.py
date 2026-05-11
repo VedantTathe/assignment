@@ -20,24 +20,26 @@ async def init_db():
 @pytest.mark.asyncio
 async def test_eval_harness_persistence_and_isolation():
     await init_db()
+    
+    # Run 2 cases concurrently using the MockLLMProvider
+    test_cases = [STANDARD_CASES[0], ADVERSARIAL_CASES[1]]
+    
+    provider_config = {
+        "llm_provider": MockLLMProvider()
+    }
+    
+    run_id = await run_evaluation_suite(
+        cases=test_cases,
+        dataset_name="test_dataset_v1",
+        session_maker=TestingSessionLocal,
+        concurrency_limit=2,
+        provider_config=provider_config
+    )
+    
+    assert run_id > 0
+    
+    # Use a fresh session for verification queries
     async with TestingSessionLocal() as session:
-        # Run 2 cases concurrently using the MockLLMProvider
-        test_cases = [STANDARD_CASES[0], ADVERSARIAL_CASES[1]]
-        
-        provider_config = {
-            "llm_provider": MockLLMProvider()
-        }
-        
-        run_id = await run_evaluation_suite(
-            cases=test_cases,
-            dataset_name="test_dataset_v1",
-            session_maker=TestingSessionLocal,
-            concurrency_limit=2,
-            provider_config=provider_config
-        )
-        
-        assert run_id > 0
-        
         # Verify EvalRun
         run = await session.get(EvalRun, run_id)
         assert run is not None

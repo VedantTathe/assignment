@@ -88,14 +88,7 @@ async def sql_query_tool(
     if not query or not query.strip():
         raise ToolException("Query cannot be empty", ToolErrorType.EMPTY_RESULT, retryable=False)
     
-    if not db_session:
-        raise ToolException(
-            "Database session not available",
-            ToolErrorType.EXECUTION_ERROR,
-            retryable=False
-        )
-    
-    # Security: block destructive operations
+    # Security: block destructive operations FIRST (before checking session)
     upper_query = query.upper()
     if any(op in upper_query for op in ["DROP", "DELETE", "TRUNCATE", "ALTER", "CREATE"]):
         raise ToolException(
@@ -110,6 +103,14 @@ async def sql_query_tool(
             "Only SELECT queries are allowed",
             ToolErrorType.INVALID_SQL,
             retryable=True
+        )
+    
+    # Now check if session is available
+    if not db_session:
+        raise ToolException(
+            "Database session not available",
+            ToolErrorType.EXECUTION_ERROR,
+            retryable=False
         )
     
     try:
