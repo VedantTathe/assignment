@@ -32,7 +32,36 @@ curl http://localhost:8000/docs  # Interactive API explorer
 - `POST /api/prompts/approve` - Approve prompt rewrites
 - `POST /api/evals/trigger-reeval` - Re-evaluate with new prompts
 
-📖 **Full guide:** See [QUICKSTART.md](QUICKSTART.md)
+---
+
+## 🐳 Docker Setup (Database + Redis)
+
+For full production stack with PostgreSQL and Redis:
+
+```bash
+# Start all services: API, PostgreSQL, Redis, Celery worker
+docker-compose up --build
+
+# Services:
+# - API:        http://localhost:8000
+# - PostgreSQL: localhost:5432 (user: postgres, password: postgres)
+# - Redis:      localhost:6379
+# - Celery:     Background job processing
+```
+
+**Without Docker (In-Memory Mode):**
+- SQLite for tests (`:memory:`)
+- Server degrades gracefully if PostgreSQL unavailable
+- All APIs work, no database persistence
+
+**Environment Setup:**
+```bash
+cp .env.example .env
+# Configure:
+# - OPENAI_API_KEY: Your DeepSeek API key
+# - DATABASE_URL: PostgreSQL connection string (optional)
+# - REDIS_URL: Redis connection string (optional)
+```
 
 ---
 
