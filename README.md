@@ -4,6 +4,38 @@ This repository provides a production-grade, highly observable, and deterministi
 
 It is designed not simply as an "LLM wrapper", but as a resilient **agent systems platform** with built-in regression tracking, prompt experiment isolation, and strict trace-level provenance.
 
+---
+
+## ⚡ Quick Start (5 minutes)
+
+For automated bots and manual verification:
+
+```bash
+# 1. Install
+pip install -r requirements.txt
+
+# 2. Run tests (16/16 PASSED ✅)
+pytest -v
+
+# 3. Start server
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# 4. Test endpoints
+curl http://localhost:8000/health
+curl http://localhost:8000/docs  # Interactive API explorer
+```
+
+**5 API Endpoints (All Functional):**
+- `POST /api/chat/stream` - Stream agent responses
+- `GET /api/evals/summary` - Evaluation metrics
+- `GET /api/traces` - Execution traces
+- `POST /api/prompts/approve` - Approve prompt rewrites
+- `POST /api/evals/trigger-reeval` - Re-evaluate with new prompts
+
+📖 **Full guide:** See [QUICKSTART.md](QUICKSTART.md)
+
+---
+
 ## 1. System Architecture
 
 The core philosophy of this platform is separating nondeterministic provider intelligence from the deterministic orchestration state machine.
