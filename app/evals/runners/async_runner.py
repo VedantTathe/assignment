@@ -32,70 +32,70 @@ async def evaluate_single_case(
                 adversarial=case.adversarial,
                 tags=case.tags
             )
-        
-        initial_state = {
-            "thread_id": thread_id,
-            "user_input": case.input_query,
-            "retry_count": 0
-        }
-        
-        config = {
-            "configurable": {
-                "db_session": session,
-                "token_limit": 8000,
-                **provider_config
+            
+            initial_state = {
+                "thread_id": thread_id,
+                "user_input": case.input_query,
+                "retry_count": 0
             }
-        }
-        
-        start_time = time.time()
-        try:
-            # Wrap real graph in a timeout boundary to preserve batch execution
-            final_state = await asyncio.wait_for(graph.ainvoke(initial_state, config), timeout=60.0)
             
-            final_response = final_state.get("final_response", "")
+            config = {
+                "configurable": {
+                    "db_session": session,
+                    "token_limit": 8000,
+                    **provider_config
+                }
+            }
             
-            await update_case_result(
-                session=session,
-                result_id=case_result.id,
-                final_response=final_response,
-                success_status="success"
-            )
-            
-            metrics = calculate_all_metrics(final_state, case.expected_behavior)
-            for m in metrics:
-                await create_eval_score(
+            start_time = time.time()
+            try:
+                # Wrap real graph in a timeout boundary to preserve batch execution
+                final_state = await asyncio.wait_for(graph.ainvoke(initial_state, config), timeout=60.0)
+                
+                final_response = final_state.get("final_response", "")
+                
+                await update_case_result(
                     session=session,
                     result_id=case_result.id,
-                    dimension=m["dimension"],
-                    score=m["score"],
-                    justification=m["justification"],
-                    metadata=m["metadata"]
+                    final_response=final_response,
+                    success_status="success"
                 )
                 
-            logger.info(f"Eval case {case.id} completed successfully in {time.time() - start_time:.2f}s")
-            return {"status": "success", "state": final_state}
-            
-        except asyncio.TimeoutError:
-            await update_case_result(
-                session=session,
-                result_id=case_result.id,
-                final_response="",
-                success_status="failed",
-                error_details="Graph execution timed out"
-            )
-            logger.warning(f"Eval case {case.id} timed out.")
-            return {"status": "timeout"}
-            
-        except Exception as e:
-            await update_case_result(
-                session=session,
-                result_id=case_result.id,
-                final_response="",
-                success_status="failed",
-                error_details=str(e)
-            )
-            logger.exception(f"Eval case {case.id} crashed", error=str(e))
-            return {"status": "error", "error": str(e)}
+                metrics = calculate_all_metrics(final_state, case.expected_behavior)
+                for m in metrics:
+                    await create_eval_score(
+                        session=session,
+                        result_id=case_result.id,
+                        dimension=m["dimension"],
+                        score=m["score"],
+                        justification=m["justification"],
+                        metadata=m["metadata"]
+                    )
+                    
+                logger.info(f"Eval case {case.id} completed successfully in {time.time() - start_time:.2f}s")
+                return {"status": "success", "state": final_state}
+                
+            except asyncio.TimeoutError:
+                await update_case_result(
+                    session=session,
+                    result_id=case_result.id,
+                    final_response="",
+                    success_status="failed",
+                    error_details="Graph execution timed out"
+                )
+                logger.warning(f"Eval case {case.id} timed out.")
+                return {"status": "timeout"}
+                
+            except Exception as e:
+                await update_case_result(
+                    session=session,
+                    result_id=case_result.id,
+                    final_response="",
+                    success_status="failed",
+                    error_details=str(e)
+                )
+                logger.exception(f"Eval case {case.id} crashed", error=str(e))
+                return {"status": "error", "error": str(e)}
 
 async def run_evaluation_suite(
     cases: List[EvalCase],
