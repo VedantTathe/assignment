@@ -11,6 +11,23 @@ class PromptRegistry(Base):
     is_active = Column(Boolean, default=False)
     avg_eval_score = Column(Float, nullable=True)
 
+class PromptRewriteProposal(Base):
+    """Stores proposed prompt rewrites pending human approval."""
+    __tablename__ = "prompt_rewrite_proposals"
+    id = Column(Integer, primary_key=True)
+    agent_name = Column(String, index=True)
+    current_prompt = Column(Text)
+    proposed_prompt = Column(Text)
+    diff_summary = Column(Text)  # Summary of changes
+    justification = Column(Text)  # Why this change was proposed
+    failing_eval_cases = Column(JSON)  # List of case IDs that failed
+    estimated_improvement = Column(Float)  # Estimated performance delta
+    approval_status = Column(String, default="pending")  # pending, approved, rejected
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=func.now())
+    approved_at = Column(DateTime, nullable=True)
+    approved_by = Column(String, nullable=True)
+
 class PromptRewriteAudit(Base):
     __tablename__ = "prompt_rewrite_audit"
     id = Column(Integer, primary_key=True)
